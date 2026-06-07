@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { AppState, AppAction, ModuleType, ModuleResult } from '../utils/types';
+import { useState, useEffect, useCallback } from 'react';
+import { AppState, AppAction, ModuleType, ModuleResult, CEFRBand, MCQQuestion } from '../utils/types';
 import { moduleQuestions } from '../data/questions';
-import { scoreToBand } from '../utils/cefr';
+import { scoreToBand, bandToNumeric, CEFR_COLORS } from '../utils/cefr';
 import ListeningPlayer from './ListeningPlayer';
 
 interface Props {
@@ -9,183 +9,274 @@ interface Props {
   dispatch: React.Dispatch<AppAction>;
 }
 
+// ── Adaptive helpers ──────────────────────────────────────────────────────────
+
+/** Find the best starting question: first B1 (middle difficulty), fallback to middle index */
+function getStartId(questions: MCQQuestion[]): number {
+  const b1 = questions.find(q => q.cefrLevel === 'B1');
+  return (b1 ?? questions[Math.floor(questions.length / 2)]).id;
+}
+
+/**
+ * Pick the next question to serve.
+ * Target = lastBand ± 1 level depending on correctness.
+ * Chooses the unserved question whose CEFR difficulty is closest to the target.
+ * On a tie, prefers the question whose level hasn't been seen yet.
+ */
+function pickNext(
+  questions: MCQQuestion[],
+  servedIds: Set<number>,
+  wasCorrect: boolean,
+  lastBand: CEFRBand
+): number | null {
+  const pool = questions.filter(q => !servedIds.has(q.id));
+  if (!pool.length) return null;
+
+  const lastN = bandToNumeric(lastBand);
+  const targetN = Math.max(1, Math.min(6, wasCorrect ? lastN + 1 : lastN - 1));
+
+  const servedBands = new Set(
+    questions.filter(q => servedIds.has(q.id)).map(q => q.cefrLevel)
+  );
+
+  return pool.reduce((best, q) => {
+    const qDist = Math.abs(bandToNumeric(q.cefrLevel) - targetN);
+    const bDist = Math.abs(bandToNumeric(best.cefrLevel) - targetN);
+    if (qDist !== bDist) return qDist < bDist ? q : best;
+    // Tie-break: prefer a level not yet seen
+    const qNew = !servedBands.has(q.cefrLevel);
+    const bNew = !servedBands.has(best.cefrLevel);
+    return qNew && !bNew ? q : best;
+  }).id;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function MCQModule({ state, dispatch }: Props) {
   const module = state.activeModule as Exclude<ModuleType, 'speaking'>;
   const questions = moduleQuestions[module];
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [tabWarning, setTabWarning] = useState(false);
+  const TOTAL = questions.length; // 12
+
+  // Adaptive order state
+  const [servedOrder, setServedOrder] = useState<number[]>(() => [getStartId(questions)]);
+  const [currentPos, setCurrentPos] = useState(0);
   const [confirmed, setConfirmed] = useState<Record<number, boolean>>({});
-  const [currentPassageId, setCurrentPassageId] = useState<string | undefined>(undefined);
+  const [tabWarning, setTabWarning] = useState(false);
 
-  const current = questions[currentIndex];
-  const totalQ = questions.length;
+  const currentId   = servedOrder[currentPos];
+  const current     = questions.find(q => q.id === currentId)!;
+  const isLocked    = !!confirmed[currentId];
+  const selectedAns = state.currentAnswers[currentId];
+  const allServed   = servedOrder.length === TOTAL;
 
-  // Track passage for reading (only show passage when it changes)
+  // Passage text for reading (find contextText from first question with this passageId)
+  const passageText =
+    module === 'reading' && current.passageId
+      ? questions.find(q => q.passageId === current.passageId && q.contextText)?.contextText
+      : undefined;
+
+  // Tab-focus integrity
   useEffect(() => {
-    if (module === 'reading') {
-      const q = questions[currentIndex];
-      if (q.passageId && q.passageId !== currentPassageId) {
-        setCurrentPassageId(q.passageId);
-      }
-    }
-  }, [currentIndex, module, questions, currentPassageId]);
-
-  // Tab-focus integrity warning
-  useEffect(() => {
-    const onVisibility = () => {
+    const onVis = () => {
       if (document.hidden) {
         dispatch({ type: 'INCREMENT_TAB_WARNING' });
         setTabWarning(true);
       }
     };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, [dispatch]);
 
-  const selectedAnswer = state.currentAnswers[current.id];
-  const isLocked = confirmed[current.id] !== undefined;
-  const canProceed = selectedAnswer !== undefined;
+  // Queue next question when user advances past the last served one
+  const queueNext = useCallback((wasCorrect: boolean, fromBand: CEFRBand) => {
+    const usedSet = new Set(servedOrder);
+    const nextId = pickNext(questions, usedSet, wasCorrect, fromBand);
+    if (nextId !== null) {
+      setServedOrder(prev => [...prev, nextId]);
+    }
+  }, [servedOrder, questions]);
 
   const handleSelect = (idx: number) => {
     if (isLocked) return;
-    dispatch({ type: 'SET_ANSWER', payload: { questionId: current.id, selectedIndex: idx } });
+    dispatch({ type: 'SET_ANSWER', payload: { questionId: currentId, selectedIndex: idx } });
   };
 
-  const handleConfirm = () => {
-    if (!canProceed) return;
-    setConfirmed(prev => ({ ...prev, [current.id]: true }));
+  const handleLock = () => {
+    if (selectedAns === undefined) return;
+    setConfirmed(prev => ({ ...prev, [currentId]: true }));
+    // Pre-queue the next question immediately so the dot appears
+    if (servedOrder.length <= currentPos + 1 && servedOrder.length < TOTAL) {
+      const wasCorrect = selectedAns === current.correctIndex;
+      queueNext(wasCorrect, current.cefrLevel);
+    }
   };
 
   const handleNext = () => {
-    if (currentIndex < totalQ - 1) {
-      setCurrentIndex(i => i + 1);
+    if (currentPos < servedOrder.length - 1) {
+      setCurrentPos(p => p + 1);
     }
   };
 
   const handleSubmit = () => {
-    // Build answers list
-    const answers = questions.map(q => ({
-      questionId: q.id,
-      selectedIndex: state.currentAnswers[q.id] ?? -1,
-      correct: state.currentAnswers[q.id] === q.correctIndex,
-    }));
+    const answers = servedOrder.map(id => {
+      const q = questions.find(q => q.id === id)!;
+      const sel = state.currentAnswers[id] ?? -1;
+      return { questionId: id, selectedIndex: sel, correct: sel === q.correctIndex };
+    });
     const score = answers.filter(a => a.correct).length;
     const result: ModuleResult = {
       module,
       score,
-      total: totalQ,
+      total: TOTAL,
       cefrBand: scoreToBand(score),
       answers,
       completedAt: new Date().toISOString(),
+      adaptivePath: servedOrder.map(id => questions.find(q => q.id === id)!.cefrLevel),
     };
     dispatch({ type: 'SUBMIT_MODULE', payload: result });
   };
 
-  const isLastQuestion = currentIndex === totalQ - 1;
-  const allAnswered = questions.every(q => state.currentAnswers[q.id] !== undefined);
-
-  const moduleNames: Record<string, string> = {
+  const MODULE_LABELS: Record<string, string> = {
     grammar: 'Grammar', vocabulary: 'Vocabulary', reading: 'Reading', listening: 'Listening',
   };
-  const moduleName = moduleNames[module] || module;
 
-  // Determine which passage to show for reading
-  const getPassageForQuestion = () => {
-    if (module !== 'reading') return null;
-    // Find contextText from the first question with this passageId
-    const passageQ = questions.find(q => q.passageId === current.passageId && q.contextText);
-    return passageQ?.contextText ?? null;
-  };
-
-  const passageText = getPassageForQuestion();
-  const showPassage = module === 'reading' && passageText;
+  const isLastServed  = currentPos === servedOrder.length - 1;
+  const allConfirmed  = servedOrder.every(id => confirmed[id]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Tab warning banner */}
+
+      {/* Tab warning */}
       {tabWarning && (
-        <div
-          className="mb-4 px-4 py-3 rounded-xl flex items-center justify-between"
-          style={{ background: '#fff7ed', border: '1.5px solid #fed7aa' }}
-        >
-          <div className="flex items-center gap-2 text-orange-800 text-sm font-medium">
-            ⚠️ You navigated away from the test. This has been noted.
-          </div>
-          <button
-            onClick={() => setTabWarning(false)}
-            className="text-orange-600 hover:text-orange-800 text-xs font-semibold"
-          >
+        <div className="mb-4 px-4 py-3 rounded-xl flex items-center justify-between"
+          style={{ background: '#fff7ed', border: '1.5px solid #fed7aa' }}>
+          <span className="text-orange-800 text-sm font-medium">
+            ⚠️ You navigated away from the test. This has been recorded.
+          </span>
+          <button onClick={() => setTabWarning(false)}
+            className="text-orange-600 hover:text-orange-800 text-xs font-semibold ml-4">
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Module header */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">
-            {moduleName} Assessment
-          </h2>
+          <h2 className="text-2xl font-bold text-slate-900">{MODULE_LABELS[module]} Assessment</h2>
           <p className="text-slate-500 text-sm mt-0.5">
-            Question {currentIndex + 1} of {totalQ}
+            Question {currentPos + 1} of {TOTAL}
+            <span className="ml-2 text-xs" style={{ color: '#94a3b8' }}>
+              · Adaptive mode
+            </span>
           </p>
         </div>
-        <button
-          onClick={() => dispatch({ type: 'GO_TO_MODULES' })}
-          className="btn-secondary text-xs py-2 px-3"
-        >
+        <button onClick={() => dispatch({ type: 'GO_TO_MODULES' })}
+          className="btn-secondary text-xs py-2 px-3">
           ← Back
         </button>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-2 rounded-full mb-6" style={{ background: '#e2e8f0' }}>
-        <div
-          className="h-full rounded-full transition-all duration-500"
+      {/* Overall progress bar */}
+      <div className="h-2 rounded-full mb-5" style={{ background: '#e2e8f0' }}>
+        <div className="h-full rounded-full transition-all duration-500"
           style={{
-            width: `${((currentIndex + 1) / totalQ) * 100}%`,
+            width: `${((currentPos + 1) / TOTAL) * 100}%`,
             background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)',
-          }}
-        />
+          }} />
       </div>
 
-      {/* Question navigator dots */}
-      <div className="flex gap-1.5 flex-wrap mb-6">
-        {questions.map((q, i) => {
-          const answered = state.currentAnswers[q.id] !== undefined;
-          const isCurrent = i === currentIndex;
+      {/* ── Adaptive path visualiser ─────────────────────────────────────────── */}
+      <div className="mb-6">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          Your adaptive path
+        </p>
+        <div className="flex gap-1.5 flex-wrap items-center">
+          {/* Served questions */}
+          {servedOrder.map((qId, i) => {
+            const q    = questions.find(q => q.id === qId)!;
+            const ans  = state.currentAnswers[qId];
+            const done = confirmed[qId];
+            const ok   = done && ans === q.correctIndex;
+            const bad  = done && ans !== q.correctIndex;
+            const cur  = i === currentPos;
+
+            return (
+              <button key={qId} onClick={() => setCurrentPos(i)}
+                title={`Q${i + 1} — ${q.cefrLevel}`}
+                className="flex flex-col items-center gap-0.5 group">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                  style={{
+                    background: cur
+                      ? '#1d4ed8'
+                      : ok  ? '#10b981'
+                      : bad ? '#ef4444'
+                      : '#e2e8f0',
+                    color: cur || ok || bad ? 'white' : '#94a3b8',
+                    boxShadow: cur ? '0 0 0 3px rgba(29,78,216,0.25)' : '',
+                    border: cur ? '2px solid #1d4ed8' : '2px solid transparent',
+                  }}>
+                  {q.cefrLevel}
+                </div>
+                {done && (
+                  <span className="text-xs" style={{ color: ok ? '#10b981' : '#ef4444' }}>
+                    {ok ? '✓' : '✗'}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Ghost slots for unserved questions */}
+          {Array.from({ length: TOTAL - servedOrder.length }).map((_, i) => (
+            <div key={`ghost-${i}`}
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              style={{ border: '2px dashed #e2e8f0' }}>
+              <span className="text-slate-300 text-xs">?</span>
+            </div>
+          ))}
+
+          {/* Legend */}
+          <div className="ml-auto flex gap-3 text-xs text-slate-400 shrink-0">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" /> Current
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Correct
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Incorrect
+            </span>
+          </div>
+        </div>
+
+        {/* Difficulty trend arrow */}
+        {servedOrder.length > 1 && (() => {
+          const prev = questions.find(q => q.id === servedOrder[currentPos - 1 < 0 ? 0 : currentPos - 1]);
+          const curr = questions.find(q => q.id === currentId);
+          if (!prev || !curr || currentPos === 0) return null;
+          const delta = bandToNumeric(curr.cefrLevel) - bandToNumeric(prev.cefrLevel);
+          if (delta === 0) return null;
           return (
-            <button
-              key={q.id}
-              onClick={() => setCurrentIndex(i)}
-              className="w-7 h-7 rounded-full text-xs font-bold transition-all"
-              style={{
-                background: isCurrent ? '#1d4ed8' : answered ? '#bbf7d0' : '#e2e8f0',
-                color: isCurrent ? 'white' : answered ? '#166534' : '#64748b',
-                border: isCurrent ? '2px solid #1d4ed8' : '2px solid transparent',
-              }}
-            >
-              {i + 1}
-            </button>
+            <p className="text-xs mt-1.5" style={{ color: CEFR_COLORS[curr.cefrLevel] }}>
+              {delta > 0
+                ? `↑ Difficulty increased to ${curr.cefrLevel} — great work on the last question`
+                : `↓ Difficulty adjusted to ${curr.cefrLevel} — let's consolidate here`}
+            </p>
           );
-        })}
+        })()}
       </div>
 
-      {/* Question card */}
+      {/* ── Question card ──────────────────────────────────────────────────── */}
       <div className="card">
-        {/* Level badge */}
+        {/* CEFR badge + lock status */}
         <div className="flex items-center justify-between mb-4">
-          <span
-            className="px-2.5 py-1 rounded-lg text-xs font-bold"
-            style={{ background: '#eff6ff', color: '#1d4ed8' }}
-          >
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold"
+            style={{ background: '#eff6ff', color: '#1d4ed8' }}>
             CEFR {current.cefrLevel}
           </span>
           {isLocked && (
-            <span
-              className="px-2.5 py-1 rounded-lg text-xs font-semibold"
-              style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }}
-            >
+            <span className="px-2.5 py-1 rounded-lg text-xs font-semibold"
+              style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' }}>
               ✓ Answer locked
             </span>
           )}
@@ -202,11 +293,9 @@ export default function MCQModule({ state, dispatch }: Props) {
         )}
 
         {/* Reading passage */}
-        {showPassage && (
-          <div
-            className="rounded-xl p-4 mb-5 max-h-52 overflow-y-auto text-sm leading-relaxed"
-            style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#374151' }}
-          >
+        {passageText && (
+          <div className="rounded-xl p-4 mb-5 max-h-52 overflow-y-auto text-sm leading-relaxed"
+            style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#374151' }}>
             <p className="font-semibold text-xs text-slate-500 mb-2 uppercase tracking-wider">
               📖 Reading Passage
             </p>
@@ -222,66 +311,43 @@ export default function MCQModule({ state, dispatch }: Props) {
         {/* Answer options */}
         <div className="space-y-2.5">
           {current.options.map((opt, idx) => {
-            let className = 'answer-option';
-            const isSelected = selectedAnswer === idx;
-
+            let cls = 'answer-option';
+            const isSel = selectedAns === idx;
             if (isLocked) {
-              className += ' locked';
-              if (idx === current.correctIndex) className += ' correct';
-              else if (isSelected && idx !== current.correctIndex) className += ' incorrect';
-              else if (isSelected) className += ' selected';
-            } else if (isSelected) {
-              className += ' selected';
+              cls += ' locked';
+              if (idx === current.correctIndex) cls += ' correct';
+              else if (isSel) cls += ' incorrect';
+            } else if (isSel) {
+              cls += ' selected';
             }
 
             return (
-              <button
-                key={idx}
-                className={className}
-                onClick={() => handleSelect(idx)}
-              >
-                <span
-                  className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-xs font-bold border-2 mt-0.5"
+              <button key={idx} className={cls} onClick={() => handleSelect(idx)}>
+                <span className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-xs font-bold border-2 mt-0.5"
                   style={{
                     borderColor: isLocked
-                      ? idx === current.correctIndex
-                        ? '#10b981'
-                        : isSelected
-                          ? '#ef4444'
-                          : '#e2e8f0'
-                      : isSelected
-                        ? '#2563eb'
-                        : '#e2e8f0',
+                      ? idx === current.correctIndex ? '#10b981' : isSel ? '#ef4444' : '#e2e8f0'
+                      : isSel ? '#2563eb' : '#e2e8f0',
                     background: isLocked
-                      ? idx === current.correctIndex
-                        ? '#10b981'
-                        : isSelected
-                          ? '#ef4444'
-                          : 'transparent'
-                      : isSelected
-                        ? '#2563eb'
-                        : 'transparent',
-                    color: (isLocked && (idx === current.correctIndex || isSelected)) || (!isLocked && isSelected)
-                      ? 'white'
-                      : '#64748b',
-                  }}
-                >
+                      ? idx === current.correctIndex ? '#10b981' : isSel ? '#ef4444' : 'transparent'
+                      : isSel ? '#2563eb' : 'transparent',
+                    color: (isLocked && (idx === current.correctIndex || isSel)) || (!isLocked && isSel)
+                      ? 'white' : '#64748b',
+                  }}>
                   {String.fromCharCode(65 + idx)}
                 </span>
                 <span className="flex-1">{opt}</span>
                 {isLocked && idx === current.correctIndex && <span className="ml-auto text-green-600">✓</span>}
-                {isLocked && isSelected && idx !== current.correctIndex && <span className="ml-auto text-red-500">✗</span>}
+                {isLocked && isSel && idx !== current.correctIndex && <span className="ml-auto text-red-500">✗</span>}
               </button>
             );
           })}
         </div>
 
-        {/* Explanation (shown after locking) */}
+        {/* Explanation */}
         {isLocked && (
-          <div
-            className="mt-4 rounded-xl p-4 text-sm"
-            style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}
-          >
+          <div className="mt-4 rounded-xl p-4 text-sm"
+            style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534' }}>
             <span className="font-semibold">Explanation: </span>
             {current.explanation}
           </div>
@@ -289,60 +355,60 @@ export default function MCQModule({ state, dispatch }: Props) {
 
         {/* Action buttons */}
         <div className="mt-6 flex items-center justify-between gap-3">
-          <button
-            onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
-            disabled={currentIndex === 0}
-            className="btn-secondary text-sm py-2"
-          >
+          <button onClick={() => setCurrentPos(p => Math.max(0, p - 1))}
+            disabled={currentPos === 0}
+            className="btn-secondary text-sm py-2">
             ← Prev
           </button>
 
           <div className="flex gap-2">
             {!isLocked && (
-              <button
-                onClick={handleConfirm}
-                disabled={!canProceed}
-                className="btn-primary text-sm py-2.5 px-5"
-              >
+              <button onClick={handleLock} disabled={selectedAns === undefined}
+                className="btn-primary text-sm py-2.5 px-5">
                 Lock Answer
               </button>
             )}
-
-            {isLocked && !isLastQuestion && (
-              <button
-                onClick={handleNext}
-                className="btn-primary text-sm py-2.5 px-6"
-              >
-                Next →
+            {isLocked && isLastServed && !allServed && (
+              /* Waiting for next question to be queued — shouldn't linger */
+              <button disabled className="btn-primary text-sm py-2.5 px-5 opacity-50">
+                Loading next…
               </button>
             )}
-
-            {isLastQuestion && allAnswered && (
-              <button
-                onClick={handleSubmit}
-                className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all"
-                style={{ background: '#10b981', color: 'white', boxShadow: '0 4px 12px rgba(16,185,129,0.4)' }}
-              >
-                Submit {moduleName} →
+            {isLocked && !isLastServed && (
+              <button onClick={handleNext} className="btn-primary text-sm py-2.5 px-6">
+                Next →
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Bottom hint */}
-      {!allAnswered && isLastQuestion && (
-        <p className="text-center text-sm text-slate-500 mt-4">
-          Please answer all questions before submitting.{' '}
-          <button
-            className="text-blue-600 underline"
-            onClick={() => {
-              const first = questions.findIndex(q => state.currentAnswers[q.id] === undefined);
-              if (first >= 0) setCurrentIndex(first);
-            }}
-          >
-            Go to first unanswered
+      {/* ── Submit panel — appears when all 12 questions served & confirmed ── */}
+      {allServed && allConfirmed && (
+        <div className="mt-6 rounded-2xl p-6 text-center"
+          style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '2px solid #86efac' }}>
+          <p className="text-emerald-800 font-semibold mb-1">
+            ✓ All {TOTAL} questions completed
+          </p>
+          <p className="text-emerald-700 text-sm mb-4">
+            {servedOrder.filter(id => {
+              const q = questions.find(q => q.id === id)!;
+              return state.currentAnswers[id] === q.correctIndex;
+            }).length} / {TOTAL} correct — ready to see your results
+          </p>
+          <button onClick={handleSubmit}
+            className="px-8 py-3 rounded-xl font-bold text-white transition-all hover:scale-105"
+            style={{ background: '#10b981', boxShadow: '0 4px 16px rgba(16,185,129,0.4)' }}>
+            Submit {MODULE_LABELS[module]} →
           </button>
+        </div>
+      )}
+
+      {/* Progress hint */}
+      {!allServed && (
+        <p className="text-center text-xs text-slate-400 mt-4">
+          {TOTAL - servedOrder.length} question{TOTAL - servedOrder.length !== 1 ? 's' : ''} remaining
+          · The next question is chosen based on your answers
         </p>
       )}
     </div>

@@ -40,6 +40,8 @@ export interface ModuleResult {
   cefrBand: CEFRBand;
   answers: QuestionAnswer[];
   completedAt: string;
+  /** CEFR levels in the order questions were adaptively served — e.g. ['B1','B2','C1','B2',...] */
+  adaptivePath: CEFRBand[];
 }
 
 export interface SpeakingPromptResult {
