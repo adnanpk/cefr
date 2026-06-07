@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f1f5f9;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    font-size: 0.95rem;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.4rem;
+    background: white;
+    color: #1e3a5f;
+    font-weight: 500;
+    border-radius: 0.75rem;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .card {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    padding: 1.75rem;
+  }
+
+  .cefr-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 0.75rem;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    border: 2px solid currentColor;
+  }
+}
+
+/* Radio answer option */
+.answer-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.875rem 1.125rem;
+  border-radius: 0.75rem;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: white;
+  width: 100%;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.answer-option:hover:not(.locked) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.answer-option.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.answer-option.correct {
+  border-color: #10b981;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.answer-option.incorrect {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.answer-option.locked {
+  cursor: default;
+}
+
+/* Recording pulse animation */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.recording-pulse::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse-ring 1.4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Watermark */
+.watermark {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.watermark-text {
+  transform: rotate(-30deg);
+  font-size: clamp(2rem, 6vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: #1e3a5f;
+  opacity: 0.035;
+  white-space: nowrap;
+  text-transform: uppercase;
+}

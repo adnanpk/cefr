@@ -1,0 +1,468 @@
+import { MCQQuestion, SpeakingPrompt } from '../utils/types';
+
+// ─── GRAMMAR (10 questions, A1 → C2 spectrum) ────────────────────────────────
+export const grammarQuestions: MCQQuestion[] = [
+  {
+    id: 101,
+    cefrLevel: 'A1',
+    text: 'I ___ a student at this university.',
+    options: ['am', 'is', 'are', 'be'],
+    correctIndex: 0,
+    explanation: '"Am" is the correct form of "to be" with the subject "I".',
+  },
+  {
+    id: 102,
+    cefrLevel: 'A2',
+    text: 'She usually ___ to work by bus, but today she is walking.',
+    options: ['go', 'goes', 'went', 'is going'],
+    correctIndex: 1,
+    explanation: 'Simple present "goes" is used for habitual actions. "Is going" describes what is happening right now.',
+  },
+  {
+    id: 103,
+    cefrLevel: 'A2',
+    text: 'They ___ dinner when the phone rang.',
+    options: ['had', 'were having', 'have had', 'have been having'],
+    correctIndex: 1,
+    explanation: 'Past continuous "were having" describes an ongoing action interrupted by a past simple event.',
+  },
+  {
+    id: 104,
+    cefrLevel: 'B1',
+    text: 'If it ___ tomorrow, we will cancel the outdoor event.',
+    options: ['will rain', 'rains', 'rained', 'would rain'],
+    correctIndex: 1,
+    explanation: 'First conditional uses simple present in the if-clause: "If + present, will + infinitive".',
+  },
+  {
+    id: 105,
+    cefrLevel: 'B1',
+    text: 'By the time she arrived, I ___ for over two hours.',
+    options: ['was waiting', 'waited', 'have been waiting', 'had been waiting'],
+    correctIndex: 3,
+    explanation: 'Past perfect continuous "had been waiting" emphasises the duration of an action completed before another past event.',
+  },
+  {
+    id: 106,
+    cefrLevel: 'B2',
+    text: 'He told me he ___ the report the following day.',
+    options: ['will submit', 'submits', 'would submit', 'has submitted'],
+    correctIndex: 2,
+    explanation: 'Reported speech shifts future "will" to "would" when the reporting verb is in the past.',
+  },
+  {
+    id: 107,
+    cefrLevel: 'B2',
+    text: 'The ancient bridge ___ by engineers before it reopened to traffic last spring.',
+    options: ['was inspecting', 'was inspected', 'has been inspected', 'inspected'],
+    correctIndex: 1,
+    explanation: 'Past passive "was inspected" is required because the bridge received the action, and the time reference is a specific past point.',
+  },
+  {
+    id: 108,
+    cefrLevel: 'C1',
+    text: 'The board insisted that the chief executive ___ a formal public statement.',
+    options: ['issues', 'issued', 'issue', 'would issue'],
+    correctIndex: 2,
+    explanation: 'After verbs of insisting/recommending, the mandative subjunctive uses the base infinitive without "to" or -s: "that he issue".',
+  },
+  {
+    id: 109,
+    cefrLevel: 'C1',
+    text: 'Had the committee reviewed the proposal more carefully, they ___ its fundamental flaws immediately.',
+    options: ['would identify', 'will have identified', 'would have identified', 'had identified'],
+    correctIndex: 2,
+    explanation: 'Inverted third conditional: "Had + subject + past participle" replaces "If + past perfect", and the result clause uses "would have + past participle".',
+  },
+  {
+    id: 110,
+    cefrLevel: 'C2',
+    text: 'Not only ___ the groundbreaking solution, but he also presented a meticulous implementation roadmap.',
+    options: ['he found', 'he did find', 'did he find', 'found he'],
+    correctIndex: 2,
+    explanation: 'When a negative or restrictive adverbial ("Not only") fronts a clause for emphasis, subject–auxiliary inversion is obligatory: "did he find".',
+  },
+];
+
+// ─── VOCABULARY (10 questions, A1 → C2 spectrum) ─────────────────────────────
+export const vocabularyQuestions: MCQQuestion[] = [
+  {
+    id: 201,
+    cefrLevel: 'A1',
+    text: 'What do you call the room in a house where you sleep?',
+    options: ['kitchen', 'bedroom', 'bathroom', 'garage'],
+    correctIndex: 1,
+    explanation: 'A "bedroom" is the room designated for sleeping.',
+  },
+  {
+    id: 202,
+    cefrLevel: 'A2',
+    text: 'The word "annual" means happening every ___.',
+    options: ['day', 'week', 'month', 'year'],
+    correctIndex: 3,
+    explanation: '"Annual" comes from Latin "annus" (year) and describes something occurring once a year.',
+  },
+  {
+    id: 203,
+    cefrLevel: 'B1',
+    text: 'After working twelve hours straight, she was completely ___ and could barely keep her eyes open.',
+    options: ['refreshed', 'exhausted', 'energised', 'motivated'],
+    correctIndex: 1,
+    explanation: '"Exhausted" means extremely tired after great physical or mental effort.',
+  },
+  {
+    id: 204,
+    cefrLevel: 'B1',
+    text: 'Choose the word closest in meaning to "expand":',
+    options: ['reduce', 'maintain', 'enlarge', 'limit'],
+    correctIndex: 2,
+    explanation: '"Expand" means to increase in size or scope; "enlarge" is its closest synonym here.',
+  },
+  {
+    id: 205,
+    cefrLevel: 'B2',
+    text: 'The company\'s board voted to ___ its contract with the supplier following repeated delivery failures.',
+    options: ['renew', 'extend', 'terminate', 'negotiate'],
+    correctIndex: 2,
+    explanation: '"Terminate" means to bring something to an end, fitting the context of ending a contract.',
+  },
+  {
+    id: 206,
+    cefrLevel: 'B2',
+    text: 'Which word means "to make a problem or situation worse"?',
+    options: ['alleviate', 'mitigate', 'exacerbate', 'diminish'],
+    correctIndex: 2,
+    explanation: '"Exacerbate" means to intensify or worsen. "Alleviate" and "mitigate" mean to reduce or relieve.',
+  },
+  {
+    id: 207,
+    cefrLevel: 'C1',
+    text: 'The politician\'s speech was full of ___ — impressive-sounding language that ultimately contained little substance.',
+    options: ['rhetoric', 'syntax', 'diction', 'prosody'],
+    correctIndex: 0,
+    explanation: '"Rhetoric" can mean persuasive language or, negatively, empty or insincere speech. The others relate to language structure, word choice and versification.',
+  },
+  {
+    id: 208,
+    cefrLevel: 'C1',
+    text: 'The researcher\'s conclusions were considered ___ because they sharply contradicted the established scientific consensus.',
+    options: ['orthodox', 'heterodox', 'canonical', 'conventional'],
+    correctIndex: 1,
+    explanation: '"Heterodox" means departing from accepted or established beliefs. Its antonym is "orthodox".',
+  },
+  {
+    id: 209,
+    cefrLevel: 'C2',
+    text: 'His prose was remarkably ___, expressing profound ideas in the fewest possible words.',
+    options: ['verbose', 'laconic', 'prolix', 'grandiloquent'],
+    correctIndex: 1,
+    explanation: '"Laconic" means using very few words. "Verbose", "prolix" and "grandiloquent" all describe overly wordy or pompous expression.',
+  },
+  {
+    id: 210,
+    cefrLevel: 'C2',
+    text: 'His habitual ___ — finding moral fault in everyone while remaining blind to his own shortcomings — alienated his colleagues.',
+    options: ['sycophancy', 'obsequiousness', 'sanctimony', 'pusillanimity'],
+    correctIndex: 2,
+    explanation: '"Sanctimony" is the quality of making a show of being morally superior. The others describe excessive flattery, servility, and cowardice respectively.',
+  },
+];
+
+// ─── READING PASSAGES ─────────────────────────────────────────────────────────
+const passageA = `Amsterdam is famous worldwide for its canals, world-class museums, and vibrant cycling culture. More than 800,000 bicycles are registered in the city — outnumbering the human population — and cycling is by far the most popular means of getting around. The city boasts over 500 kilometres of dedicated cycling paths, making it consistently ranked among the most bicycle-friendly cities on the planet. Many visitors choose to explore Amsterdam by bicycle, renting one from the numerous hire shops dotted throughout the city. The famously flat landscape makes cycling accessible and enjoyable even for complete beginners.`;
+
+const passageB = `Remote work, once considered a perk reserved for a privileged few, has become a defining feature of the modern employment landscape. The COVID-19 pandemic accelerated this transformation dramatically, forcing organisations worldwide to adapt virtually overnight. While proponents argue that remote work enhances productivity and improves work-life balance, critics contend that it erodes company culture and impedes meaningful collaboration. Recent research, however, presents a more nuanced picture: productivity gains prove highly contingent on the nature of the work itself and the employee's domestic circumstances. Those with dedicated home offices and minimal domestic interruptions tend to flourish, while others struggle with chronic isolation and the blurring of boundaries between professional and personal life.`;
+
+const passageC = `The concept of dark matter represents one of contemporary cosmology's most enduring enigmas. Comprising an estimated 27% of the universe's total mass-energy content yet emitting no detectable electromagnetic radiation, dark matter is inferred exclusively through its gravitational effects on visible matter. The rotational curves of galaxies, for instance, cannot be reconciled with the gravitational pull of their observable components alone; postulating the existence of a substantial unseen mass distribution is what brings theory into alignment with observation. Despite decades of increasingly sophisticated detection efforts — from deep-underground particle detectors to cutting-edge space-based telescopes — dark matter's precise nature remains obstinately elusive. Current leading candidates include weakly interacting massive particles (WIMPs) and axions, though neither has been directly confirmed. This persistent absence of direct detection has prompted a minority of physicists to question not dark matter's existence per se, but the very theoretical frameworks through which we model gravitational interactions at cosmological scales.`;
+
+// ─── READING (10 questions across 3 passages) ─────────────────────────────────
+export const readingQuestions: MCQQuestion[] = [
+  // Passage A (A2–B1, Questions 1–3)
+  {
+    id: 301,
+    cefrLevel: 'A2',
+    passageId: 'A',
+    contextText: passageA,
+    text: 'According to the passage, what is the most popular way to travel around Amsterdam?',
+    options: ['Walking', 'Taking the tram', 'Cycling', 'Driving a car'],
+    correctIndex: 2,
+    explanation: 'The passage states "cycling is by far the most popular means of getting around".',
+  },
+  {
+    id: 302,
+    cefrLevel: 'A2',
+    passageId: 'A',
+    contextText: passageA,
+    text: 'How many kilometres of dedicated cycling paths does Amsterdam have?',
+    options: ['More than 800,000', 'Around 200', 'Over 500', 'Exactly 1,000'],
+    correctIndex: 2,
+    explanation: 'The passage says "The city boasts over 500 kilometres of dedicated cycling paths".',
+  },
+  {
+    id: 303,
+    cefrLevel: 'B1',
+    passageId: 'A',
+    contextText: passageA,
+    text: 'Why is cycling particularly accessible in Amsterdam, according to the passage?',
+    options: [
+      'Because the city has excellent weather all year round',
+      'Because bicycles are provided free of charge to visitors',
+      'Because the landscape is famously flat',
+      'Because cars are banned from the city centre',
+    ],
+    correctIndex: 2,
+    explanation: 'The final sentence states "The famously flat landscape makes cycling accessible and enjoyable even for complete beginners".',
+  },
+
+  // Passage B (B2, Questions 4–7)
+  {
+    id: 304,
+    cefrLevel: 'B1',
+    passageId: 'B',
+    contextText: passageB,
+    text: 'What event dramatically accelerated the shift to remote work, according to the passage?',
+    options: ['A surge in housing costs', 'Advances in broadband technology', 'The COVID-19 pandemic', 'New government legislation'],
+    correctIndex: 2,
+    explanation: 'The passage states "The COVID-19 pandemic accelerated this transformation dramatically".',
+  },
+  {
+    id: 305,
+    cefrLevel: 'B2',
+    passageId: 'B',
+    contextText: passageB,
+    text: 'What does recent research suggest about the relationship between remote work and productivity?',
+    options: [
+      'Remote work always increases productivity',
+      'Remote work always decreases productivity',
+      'Productivity outcomes depend on individual circumstances and job type',
+      'Remote work has no measurable effect on productivity',
+    ],
+    correctIndex: 2,
+    explanation: 'The passage says productivity gains are "highly contingent on the nature of the work itself and the employee\'s domestic circumstances".',
+  },
+  {
+    id: 306,
+    cefrLevel: 'B2',
+    passageId: 'B',
+    contextText: passageB,
+    text: 'The word "nuanced" in the passage most nearly means:',
+    options: ['Simple and straightforward', 'Misleading and confusing', 'Complex, subtle, and showing fine distinctions', 'Overwhelmingly positive'],
+    correctIndex: 2,
+    explanation: '"Nuanced" describes something that takes into account subtle distinctions and complexities rather than presenting a simple picture.',
+  },
+  {
+    id: 307,
+    cefrLevel: 'B2',
+    passageId: 'B',
+    contextText: passageB,
+    text: 'Which of the following best summarises the passage\'s overall argument?',
+    options: [
+      'Remote work is universally beneficial and should be mandated',
+      'Remote work is fundamentally harmful and should be discouraged',
+      'Remote work has mixed outcomes that depend heavily on individual and contextual factors',
+      'The debate about remote work is largely resolved in favour of office work',
+    ],
+    correctIndex: 2,
+    explanation: 'The passage presents both arguments for and against remote work, then concludes that outcomes are context-dependent.',
+  },
+
+  // Passage C (C1–C2, Questions 8–10)
+  {
+    id: 308,
+    cefrLevel: 'C1',
+    passageId: 'C',
+    contextText: passageC,
+    text: 'How do scientists know that dark matter exists, based on the passage?',
+    options: [
+      'They have observed it directly using space-based telescopes',
+      'They have confirmed it through WIMPs and axions',
+      'They infer its presence from its gravitational effects on visible matter',
+      'They have detected it using underground particle detectors',
+    ],
+    correctIndex: 2,
+    explanation: 'The passage states dark matter "is inferred exclusively through its gravitational effects on visible matter".',
+  },
+  {
+    id: 309,
+    cefrLevel: 'C1',
+    passageId: 'C',
+    contextText: passageC,
+    text: 'What does the passage say about WIMPs and axions?',
+    options: [
+      'Both have been directly confirmed as dark matter candidates',
+      'Neither has been directly confirmed',
+      'WIMPs have been confirmed but axions have not',
+      'Both have been ruled out as dark matter candidates',
+    ],
+    correctIndex: 1,
+    explanation: 'The passage explicitly states "neither has been directly confirmed".',
+  },
+  {
+    id: 310,
+    cefrLevel: 'C2',
+    passageId: 'C',
+    contextText: passageC,
+    text: 'What is the most significant implication of the final sentence of the passage?',
+    options: [
+      'Scientists are abandoning the search for dark matter',
+      'Dark matter definitely does not exist',
+      'Some physicists suspect our current models of gravity at large scales may be incomplete or flawed',
+      'WIMPs remain the most promising explanation for the missing mass',
+    ],
+    correctIndex: 2,
+    explanation: 'The final sentence says some physicists question "the very theoretical frameworks through which we model gravitational interactions at cosmological scales" — suggesting current gravity models may be inadequate.',
+  },
+];
+
+// ─── LISTENING (10 questions with TTS audio scripts) ─────────────────────────
+export const listeningQuestions: MCQQuestion[] = [
+  {
+    id: 401,
+    cefrLevel: 'A1',
+    audioScript: 'Hello. My name is Tom. I am from London, in England. I am twenty-five years old. I work as a primary school teacher. I love my job very much.',
+    text: 'Where is Tom from?',
+    options: ['Paris', 'London', 'New York', 'Berlin'],
+    correctIndex: 1,
+    explanation: 'Tom says "I am from London, in England".',
+  },
+  {
+    id: 402,
+    cefrLevel: 'A2',
+    audioScript: 'Excuse me, could you tell me how to get to the train station? — Yes, of course. Go straight ahead, then turn left at the traffic lights. The station is about a five-minute walk from there on your right.',
+    text: 'Which direction should you turn at the traffic lights?',
+    options: ['Right', 'Straight ahead', 'Left', 'Back the way you came'],
+    correctIndex: 2,
+    explanation: 'The directions say "turn left at the traffic lights".',
+  },
+  {
+    id: 403,
+    cefrLevel: 'B1',
+    audioScript: 'Good evening. Here is your weather forecast for tomorrow. The northern regions will experience heavy rainfall throughout the day, with temperatures dropping to around eight degrees Celsius. The southern areas will remain relatively dry, though some cloud cover is anticipated. Winds will be moderate, picking up slightly in coastal zones by the evening. Drivers are advised to exercise caution on mountain roads due to possible ice.',
+    text: 'What weather is expected in the northern regions tomorrow?',
+    options: [
+      'Sunshine and mild temperatures',
+      'Heavy rainfall and cold temperatures',
+      'Light snow and freezing winds',
+      'Clear skies with strong winds',
+    ],
+    correctIndex: 1,
+    explanation: 'The forecast mentions "heavy rainfall throughout the day" with temperatures around "eight degrees Celsius" in the north.',
+  },
+  {
+    id: 404,
+    cefrLevel: 'B1',
+    audioScript: 'Good evening. Here is your weather forecast for tomorrow. The northern regions will experience heavy rainfall throughout the day, with temperatures dropping to around eight degrees Celsius. The southern areas will remain relatively dry, though some cloud cover is anticipated. Winds will be moderate, picking up slightly in coastal zones by the evening. Drivers are advised to exercise caution on mountain roads due to possible ice.',
+    text: 'What specific advice is given to drivers?',
+    options: [
+      'Avoid coastal roads entirely',
+      'Use public transport instead',
+      'Exercise caution on mountain roads',
+      'Drive slowly in southern areas',
+    ],
+    correctIndex: 2,
+    explanation: 'The forecast concludes: "Drivers are advised to exercise caution on mountain roads due to possible ice".',
+  },
+  {
+    id: 405,
+    cefrLevel: 'B2',
+    audioScript: 'Good afternoon, and thank you for attending today\'s town hall. We are here to discuss the proposed expansion of our public transportation network — specifically, the introduction of a new light rail line connecting the city centre with the eastern suburbs. This initiative is funded jointly by the municipal government and private investors, and is projected to reduce traffic congestion by approximately thirty percent over the next decade, while also significantly cutting carbon emissions. Some residents have raised legitimate concerns about construction noise and disruption to local businesses during the anticipated two-year building phase.',
+    text: 'Who is funding the new light rail line?',
+    options: [
+      'The national government alone',
+      'Private investors alone',
+      'The municipal government and private investors jointly',
+      'The European Union',
+    ],
+    correctIndex: 2,
+    explanation: 'The speaker says "This initiative is funded jointly by the municipal government and private investors".',
+  },
+  {
+    id: 406,
+    cefrLevel: 'B2',
+    audioScript: 'Good afternoon, and thank you for attending today\'s town hall. We are here to discuss the proposed expansion of our public transportation network — specifically, the introduction of a new light rail line connecting the city centre with the eastern suburbs. This initiative is funded jointly by the municipal government and private investors, and is projected to reduce traffic congestion by approximately thirty percent over the next decade, while also significantly cutting carbon emissions. Some residents have raised legitimate concerns about construction noise and disruption to local businesses during the anticipated two-year building phase.',
+    text: 'By how much is traffic congestion projected to be reduced?',
+    options: ['Ten percent', 'Twenty percent', 'Twenty-five percent', 'Thirty percent'],
+    correctIndex: 3,
+    explanation: 'The speaker says the project is "projected to reduce traffic congestion by approximately thirty percent".',
+  },
+  {
+    id: 407,
+    cefrLevel: 'C1',
+    audioScript: 'The debate surrounding artificial intelligence in education is genuinely multifaceted. On one hand, adaptive learning platforms powered by machine learning can personalise instruction with unprecedented precision, identifying gaps in student understanding and adjusting content difficulty in real time. On the other hand, critics argue that an over-reliance on algorithmic systems risks undermining the relational dimensions of teaching — the mentoring, the intuition, the capacity to read a classroom\'s emotional temperature — that no algorithm has yet replicated. A balanced approach would involve deploying AI to handle routine assessment and content delivery, while preserving the human educator\'s central role in fostering critical thinking and social-emotional development.',
+    text: 'What does the speaker suggest as a balanced approach to AI in education?',
+    options: [
+      'Replacing human teachers entirely with AI systems',
+      'Banning AI tools from all educational settings',
+      'Using AI for routine tasks while keeping human educators central to learning',
+      'Restricting AI use to university-level courses only',
+    ],
+    correctIndex: 2,
+    explanation: 'The speaker recommends "deploying AI to handle routine assessment and content delivery, while preserving the human educator\'s central role".',
+  },
+  {
+    id: 408,
+    cefrLevel: 'C1',
+    audioScript: 'The debate surrounding artificial intelligence in education is genuinely multifaceted. On one hand, adaptive learning platforms powered by machine learning can personalise instruction with unprecedented precision, identifying gaps in student understanding and adjusting content difficulty in real time. On the other hand, critics argue that an over-reliance on algorithmic systems risks undermining the relational dimensions of teaching — the mentoring, the intuition, the capacity to read a classroom\'s emotional temperature — that no algorithm has yet replicated. A balanced approach would involve deploying AI to handle routine assessment and content delivery, while preserving the human educator\'s central role in fostering critical thinking and social-emotional development.',
+    text: 'What does the speaker say that algorithms have not yet managed to replicate?',
+    options: [
+      'Grading written essays efficiently',
+      'Reading a classroom\'s emotional temperature',
+      'Delivering content to students',
+      'Tracking individual student progress',
+    ],
+    correctIndex: 1,
+    explanation: 'The speaker says critics point to "the capacity to read a classroom\'s emotional temperature — that no algorithm has yet replicated".',
+  },
+  {
+    id: 409,
+    cefrLevel: 'C2',
+    audioScript: 'In what scholars of rhetoric term the post-truth era, the epistemic foundations upon which democratic deliberation depends appear increasingly precarious. The proliferation of algorithmically curated information environments — so-called filter bubbles — has not merely fragmented shared factual ground but has actively cultivated distinct and mutually irreconcilable realities for different segments of the population. This epistemological fracture poses challenges that transcend the merely political: it strikes at the very mechanisms by which citizens arrive at collective judgements. Some theorists propose that sustained institutional investment in media literacy — teaching citizens to interrogate sources, identify cognitive biases, and distinguish between empirical claims and normative assertions — represents the most viable long-term remedy.',
+    text: 'What do some theorists propose as the most effective long-term solution?',
+    options: [
+      'Banning all social media platforms',
+      'Government censorship of false information',
+      'Sustained investment in media literacy education for citizens',
+      'Creating a single, authoritative global news source',
+    ],
+    correctIndex: 2,
+    explanation: 'The passage ends: "sustained institutional investment in media literacy... represents the most viable long-term remedy".',
+  },
+  {
+    id: 410,
+    cefrLevel: 'C2',
+    audioScript: 'In what scholars of rhetoric term the post-truth era, the epistemic foundations upon which democratic deliberation depends appear increasingly precarious. The proliferation of algorithmically curated information environments — so-called filter bubbles — has not merely fragmented shared factual ground but has actively cultivated distinct and mutually irreconcilable realities for different segments of the population. This epistemological fracture poses challenges that transcend the merely political: it strikes at the very mechanisms by which citizens arrive at collective judgements. Some theorists propose that sustained institutional investment in media literacy — teaching citizens to interrogate sources, identify cognitive biases, and distinguish between empirical claims and normative assertions — represents the most viable long-term remedy.',
+    text: 'What does the term "filter bubble" refer to in this passage?',
+    options: [
+      'A technical tool for blocking online advertisements',
+      'An algorithmically curated information environment that limits exposure to diverse viewpoints',
+      'A government programme designed to regulate online misinformation',
+      'A type of encrypted social media platform',
+    ],
+    correctIndex: 1,
+    explanation: 'The passage describes filter bubbles as "algorithmically curated information environments" that create separate realities for different population groups.',
+  },
+];
+
+// ─── SPEAKING PROMPTS (2 open-ended, graded by AI) ────────────────────────────
+export const speakingPrompts: SpeakingPrompt[] = [
+  {
+    id: 1,
+    title: 'Personal Narrative',
+    text: 'Describe a significant challenge you have faced in your life. How did you overcome it, and what did you learn from the experience?',
+    guidance: 'Speak for 1–2 minutes. Try to use varied vocabulary and a range of grammatical structures including past tenses and reflective language.',
+  },
+  {
+    id: 2,
+    title: 'Discussion & Opinion',
+    text: 'Technology has transformed almost every aspect of modern life. Do you think, on balance, it has made our lives better or worse? Discuss both sides and give your own clearly reasoned opinion with specific examples.',
+    guidance: 'Speak for 1–2 minutes. Support your arguments with concrete reasons and examples. Show your ability to weigh different perspectives.',
+  },
+];
+
+// ─── Helper map ───────────────────────────────────────────────────────────────
+export const moduleQuestions: Record<string, MCQQuestion[]> = {
+  grammar: grammarQuestions,
+  vocabulary: vocabularyQuestions,
+  reading: readingQuestions,
+  listening: listeningQuestions,
+};
