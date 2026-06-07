@@ -43,7 +43,7 @@ function getResult(state: AppState, key: ModuleType) {
 export default function Dashboard({ state, dispatch }: Props) {
   const [userEmail, setUserEmail] = useState(state.candidate?.email ?? '');
   const [sending, setSending] = useState(false);
-  const [sendStatus, setSendStatus] = useState<'idle' | 'ok' | 'err'>('idle');
+  const [sendStatus, setSendStatus] = useState<'idle' | 'ok' | 'err' | 'unconfigured'>('idle');
 
   const completedModules = MODULES.filter(m => !!getResult(state, m.key));
   const bands = completedModules.map(m => getResult(state, m.key)!.cefrBand);
@@ -149,8 +149,13 @@ export default function Dashboard({ state, dispatch }: Props) {
     setSending(true);
     setSendStatus('idle');
     try {
-      await axios.post('/api/email/user', { email: userEmail, ...buildPayload() });
-      setSendStatus('ok');
+      const res = await axios.post('/api/email/user', { email: userEmail, ...buildPayload() });
+      // Server returns { success: false, message: '...' } when email isn't configured
+      if (res.data?.success === false) {
+        setSendStatus('unconfigured');
+      } else {
+        setSendStatus('ok');
+      }
     } catch {
       setSendStatus('err');
     } finally {
@@ -344,8 +349,15 @@ export default function Dashboard({ state, dispatch }: Props) {
         {sendStatus === 'ok' && (
           <p className="mt-2 text-sm text-green-600 font-medium">✓ Results sent to {userEmail}</p>
         )}
+        {sendStatus === 'unconfigured' && (
+          <p className="mt-2 text-sm text-amber-600 font-medium">
+            ⚠️ Email is not yet configured. Add a valid <code>RESEND_API_KEY</code> (starts with <code>re_</code>) to your <code>.env</code> file and restart the server.
+          </p>
+        )}
         {sendStatus === 'err' && (
-          <p className="mt-2 text-sm text-red-600">✗ Failed to send. Please check server configuration.</p>
+          <p className="mt-2 text-sm text-red-600">
+            ✗ Could not reach the server. Make sure <code>npm run dev</code> is running on port 3001.
+          </p>
         )}
         {state.emailSent && (
           <p className="mt-2 text-xs text-slate-400">

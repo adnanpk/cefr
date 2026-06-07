@@ -13,13 +13,18 @@ let anthropicClient: import('@anthropic-ai/sdk').default | null = null;
 let resendClient: import('resend').Resend | null = null;
 
 (async () => {
-  if (process.env.ANTHROPIC_API_KEY) {
+  // Real Anthropic keys always start with "sk-ant-" — guard against placeholder values
+  const anthropicKey = process.env.ANTHROPIC_API_KEY ?? '';
+  if (anthropicKey.startsWith('sk-ant-')) {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
-    anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    anthropicClient = new Anthropic({ apiKey: anthropicKey });
   }
-  if (process.env.RESEND_API_KEY) {
+
+  // Real Resend keys always start with "re_" — guard against placeholder values
+  const resendKey = process.env.RESEND_API_KEY ?? '';
+  if (resendKey.startsWith('re_')) {
     const { Resend } = await import('resend');
-    resendClient = new Resend(process.env.RESEND_API_KEY);
+    resendClient = new Resend(resendKey);
   }
 })();
 
