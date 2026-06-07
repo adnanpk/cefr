@@ -28,10 +28,10 @@ export default function Onboarding({ dispatch }: Props) {
   };
 
   const modules = [
-    { icon: '✏️', label: 'Grammar', desc: '10 questions' },
-    { icon: '📚', label: 'Vocabulary', desc: '10 questions' },
-    { icon: '📖', label: 'Reading', desc: '10 questions' },
-    { icon: '🎧', label: 'Listening', desc: '10 audio questions' },
+    { icon: '✏️', label: 'Grammar', desc: '12 questions · Adaptive' },
+    { icon: '📚', label: 'Vocabulary', desc: '12 questions · Adaptive' },
+    { icon: '📖', label: 'Reading', desc: '12 questions · Adaptive' },
+    { icon: '🎧', label: 'Listening', desc: '12 audio questions · Adaptive' },
     { icon: '🎤', label: 'Speaking', desc: '2 recorded prompts' },
   ];
 
