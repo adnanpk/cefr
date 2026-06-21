@@ -41,7 +41,6 @@ function getResult(state: AppState, key: ModuleType) {
 }
 
 export default function Dashboard({ state, dispatch }: Props) {
-  const [userEmail, setUserEmail] = useState(state.candidate?.email ?? '');
   const [sending, setSending] = useState(false);
   const [sendStatus, setSendStatus] = useState<'idle' | 'ok' | 'err' | 'unconfigured'>('idle');
 
@@ -134,27 +133,31 @@ export default function Dashboard({ state, dispatch }: Props) {
     },
   });
 
-  const handleAdminEmail = async () => {
-    if (state.emailSent) return;
+  // Auto-send admin report once on completion (silent, best-effort)
+  const autoSendAdmin = async () => {
     try {
       await axios.post('/api/email/admin', buildPayload());
       dispatch({ type: 'SET_EMAIL_SENT' });
     } catch {
-      // Non-critical — admin email is best-effort
+      // Non-critical
     }
   };
 
-  const handleUserEmail = async () => {
-    if (!userEmail.trim()) return;
+  if (!state.emailSent && completedModules.length === 5) {
+    autoSendAdmin();
+  }
+
+  // Manual "Email My Results" — always sends to admin (arsheikh540@gmail.com)
+  const handleEmailResults = async () => {
     setSending(true);
     setSendStatus('idle');
     try {
-      const res = await axios.post('/api/email/user', { email: userEmail, ...buildPayload() });
-      // Server returns { success: false, message: '...' } when email isn't configured
+      const res = await axios.post('/api/email/admin', buildPayload());
       if (res.data?.success === false) {
         setSendStatus('unconfigured');
       } else {
         setSendStatus('ok');
+        dispatch({ type: 'SET_EMAIL_SENT' });
       }
     } catch {
       setSendStatus('err');
@@ -162,11 +165,6 @@ export default function Dashboard({ state, dispatch }: Props) {
       setSending(false);
     }
   };
-
-  // Auto-send admin report once
-  if (!state.emailSent && completedModules.length === 5) {
-    handleAdminEmail();
-  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -325,43 +323,26 @@ export default function Dashboard({ state, dispatch }: Props) {
       <div className="card mb-6">
         <h3 className="font-bold text-slate-800 mb-1">Email Results</h3>
         <p className="text-sm text-slate-500 mb-4">
-          Send a full report — including scores, transcripts, and AI feedback — directly to your inbox.
+          Send a full report — including scores, transcripts, and AI feedback — to the supervising examiner.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="email"
-            value={userEmail}
-            onChange={e => setUserEmail(e.target.value)}
-            placeholder="your@email.com"
-            className="flex-1 px-4 py-2.5 rounded-xl text-sm text-slate-800 outline-none"
-            style={{ border: '2px solid #e2e8f0', background: '#f8fafc' }}
-            onFocus={e => { e.target.style.border = '2px solid #2563eb'; }}
-            onBlur={e => { e.target.style.border = '2px solid #e2e8f0'; }}
-          />
-          <button
-            onClick={handleUserEmail}
-            disabled={sending || !userEmail.trim()}
-            className="btn-primary text-sm py-2.5 px-5 shrink-0"
-          >
-            {sending ? '⏳ Sending…' : '📧 Email My Results'}
-          </button>
-        </div>
+        <button
+          onClick={handleEmailResults}
+          disabled={sending}
+          className="btn-primary text-sm py-2.5 px-6"
+        >
+          {sending ? '⏳ Sending…' : '📧 Email My Results'}
+        </button>
         {sendStatus === 'ok' && (
-          <p className="mt-2 text-sm text-green-600 font-medium">✓ Results sent to {userEmail}</p>
+          <p className="mt-3 text-sm text-green-600 font-medium">✓ Results sent successfully.</p>
         )}
         {sendStatus === 'unconfigured' && (
-          <p className="mt-2 text-sm text-amber-600 font-medium">
-            ⚠️ Email is not yet configured. Add a valid <code>RESEND_API_KEY</code> (starts with <code>re_</code>) to your <code>.env</code> file and restart the server.
+          <p className="mt-3 text-sm text-amber-600 font-medium">
+            ⚠️ Email is not configured. Add a valid <code>RESEND_API_KEY</code> to your <code>.env</code> and restart the server.
           </p>
         )}
         {sendStatus === 'err' && (
-          <p className="mt-2 text-sm text-red-600">
-            ✗ Could not reach the server. Make sure <code>npm run dev</code> is running on port 3001.
-          </p>
-        )}
-        {state.emailSent && (
-          <p className="mt-2 text-xs text-slate-400">
-            ✓ Your results have also been automatically reported to the supervising examiner.
+          <p className="mt-3 text-sm text-red-600">
+            ✗ Could not reach the server. Make sure <code>npm run dev</code> is running.
           </p>
         )}
       </div>
